@@ -113,8 +113,8 @@ class Listener(TwythonStreamer):
 ## Commentary
 #######################################################
 
-words = ['#algorithmic #trading', '#nasdaq', '#ftse', '#sp500', '#machinelearning', '#dogging',
-         "christmas", "cityoflondon", "deeplearning", "gradientboosting"]
+words = ['#algorithmic #trading', '#nasdaq', '#ftse', '#sp500', '#machinelearning', '#mff',
+         "#christmas", "#cityoflondon", "#deeplearning", "#gradientboosting", "fintech"]
 
 def say_comment(twitter, comment=None):
     if comment == None:
@@ -186,7 +186,7 @@ def purge_follows(t):
         followers = t.get_followers_ids()
         i_follow = t.get_friends_ids()
     except:
-        pass
+        return
     deleted = 0
     new = 0
     try:
@@ -199,7 +199,7 @@ def purge_follows(t):
                 t.create_friendship(user_id=id)
                 new += 1
     except:
-        pass
+        return
     comment = 'unfollowed ' + str(deleted) + ' and followed ' + str(new)
     print(comment)
     say_comment(t, comment)
@@ -224,7 +224,7 @@ def main_loop():
     responder_thread.start()
     
     # start counter
-    x = 14
+    x = 1
     #make_friends(twitter)
     while True:
         comment, balances, predictions = stock_broker.get_market_action()
