@@ -124,8 +124,8 @@ class Broker():
             actions['buy'] = 1
         sell_shares = []
         if account.portfolio != {}:
-            try:
-                for key in account.portfolio.keys():
+            for key in account.portfolio.keys():
+                try:
                     share = account.portfolio[key]
                     bought_price = float(share.price)
                     units = float(share.holding)
@@ -134,13 +134,19 @@ class Broker():
                     price = float(s.get_price())
                     net_gain = (price * units) - total_bought_price
                     print(key, net_gain)
-                    if net_gain > 500:
+                    day7_price = self.predict_stock(key)
+                    if day7_price <= price * 0.9:
                         sell_shares.append(key)
-                    elif price > bought_price and price > float(s.get_50day_moving_avg()) \
-                                                      and price > float(s.get_200day_moving_avg()):
+                        print(key, 'is predicted to fall this week: time to sell')
+                    elif net_gain > 500:
                         sell_shares.append(key)
-            except Exception:
-                print("don't know whether to sell")
+                        print(key, 'has risen significantly: sell and bank the proceeds')
+                    elif price > bought_price and price > (float(s.get_50day_moving_avg()) * 1.05) \
+                                                      and price > (float(s.get_200day_moving_avg()) * 1.05):
+                        sell_shares.append(key)
+                        print(key, 'is well above its rolling average: selling')
+                except Exception:
+                    print("don't know whether to sell")
         
         if len(sell_shares) > 0:
             actions['sell'] = sell_shares
