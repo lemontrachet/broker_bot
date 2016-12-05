@@ -1,6 +1,6 @@
 from yahoo_finance import Share
 from collections import namedtuple, OrderedDict
-from random import choice, sample
+from random import choice, sample, shuffle
 import time
 from datetime import datetime, timedelta
 import csv
@@ -82,6 +82,7 @@ class Broker():
                 new_account = Account(num, account.name, account.portfolio, new_balance,
                                       account.watchlist, account.history)
                 self.accounts[num] = new_account
+        self.save_accounts()
 
     def update_portfolio(self, num, p=0):
         try:
@@ -94,20 +95,20 @@ class Broker():
         else:
             actions = self.review_portfolio(account)
             new_account, comment1 = self.buy_stocks(account, actions) if p == 1 else self.predictive_buy(account)
-            new_account = self.sell_stocks(new_account, actions)
+            new_account, comment2 = self.sell_stocks(new_account, actions)
             self.accounts[num] = new_account
-            return comment1
+            return comment1, comment2
 
     def get_value(self, account):
         portfolio = account.portfolio
         value = 0
-        try:
-            for stock in portfolio.keys():
+        for stock in portfolio.keys():
+            try:
                 s = Share(stock)
                 current_price = s.get_price()
                 current_value = portfolio[stock].holding * float(current_price)
                 value += current_value
-        except Exception: pass
+            except Exception: return "problem retrieving current prices"
         return value
 
     def review_portfolio(self, account):
@@ -116,7 +117,8 @@ class Broker():
         value = self.get_value(account)
         print('current stock value:', value)
         print('current cash:', account.funds)
-        print('current total value:', value + account.funds)
+        if type(value) == float:
+            print('current total value:', str(value + account.funds))
         actions = {'buy': 0, 'sell': []}
         if float(account.funds) > 250:
             actions['buy'] = 1
@@ -148,17 +150,18 @@ class Broker():
         return actions
 
     def sell_stocks(self, account, actions):
-        if actions['sell'] == []: return account
+        if actions['sell'] == []: return account, ''
         print(actions)
         portfolio = account.portfolio
         total_proceeds = 0
+        sell_statement = []
         for stock in actions['sell']:
             s = Share(stock)
             try:
                 current_price = float(s.get_price())
             except Exception:
                 print("network error: cannot process transaction for", stock, ". Try again later")
-                return account
+                return account, ''
             else:
                 holding = portfolio[stock]
                 proceeds = current_price * holding.holding
@@ -167,13 +170,20 @@ class Broker():
                 profit = proceeds - total_cost
                 print("sold", stock, "at", current_price)
                 print("profit: ", profit)
+                sell_statement.append((stock, profit))
                 portfolio.pop(stock, None)
                 account.history.append([datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'), 'sold ' \
-                                        + str(holding.holding) + ' ' + stock + '(' + profit + ')' \
-                                        + ': ' + str(account.funds + proceeds)])
+                                        + str(holding.holding) + ' ' + stock + '(' + str(profit) + ')' \
+                                        + ': ' + str(float(account.funds) + proceeds)])
             new_account = Account(account.num, account.name, portfolio, account.funds + total_proceeds,
                                   account.watchlist, account.history)
-            return new_account
+            sell_statement_stocks = [s for (s, p) in sell_statement]
+            sell_statement_profit = sum([profit for (s, profit) in sell_statement])
+            if sell_statement_stocks == []:
+                sell_statement = ''
+            else:
+                sell_statement = 'sold ' + str(sell_statement_stocks) + ' . total profit: ' + str(sell_statement_profit)
+            return new_account, sell_statement
 
     def update_watchlist(self, account):
         all_shares = get_stock_list.get_stocks()[3:]
@@ -203,20 +213,23 @@ class Broker():
         print("getting latest forecasts...")
         self.get_predictions()
         today = datetime.strftime(datetime.now(), '%Y-%m-%d')
-        df = Broker.forecasts
+        df = Broker.forecasts.copy()
         df = df[df['date_made'] == today]
         try:
-            df = df[df['prediction'] >= df['base_value'] * 1.1]
+            df['prediction'] = pd.to_numeric(df['prediction'], errors='coerce')
+            df = df[df['prediction'] >= (df['base_value'] * 1.15)]
             print("the following stocks are predicted to rise:")
             print(df)
-        except TypeError:
-            pass
+        except Exception as e:
+            print(e)
+            return self.buy_stocks(account, {'buy': 0}, [])
         account, buy_statement = self.buy_stocks(account, {'buy': 1}, list(df['stock']))
         return account, buy_statement
 
     def buy_stocks(self, account, actions, buy_list=None):
-        funds = float(account.funds)
-        if actions['buy'] == 0 or funds < 5000: return account, choice(['nothing caught my eye', "i'm skint",
+        funds = float(account.funds) / 5
+        remaining_funds = float(account.funds) - funds
+        if actions['buy'] == 0 or funds < 200: return account, choice(['nothing caught my eye', "i'm skint",
                                                                         "i'm out dogging i'll be trading later"])
 
         # check watchlist for shares moving up
@@ -231,6 +244,7 @@ class Broker():
         portfolio = account.portfolio
         if buy_list == []: return account, "i'm too high to buy " + str(choice([';/', '!!', '...?', ':/', ':p']))
         buy_statement = ''
+        shuffle(buy_list)
         for stock in buy_list:
             s = Share(stock)
             try:
@@ -238,7 +252,7 @@ class Broker():
             except Exception:
                 print("network error: could not process transaction for", stock)
                 return account, 'the market is overvalued'
-            num_shares = int((funds / 10) / current_price)
+            num_shares = int((funds / 3) / current_price)
             if num_shares < 1:
                 continue
             else:
@@ -259,6 +273,7 @@ class Broker():
             buy_statement = "bought " + stock + " at " + str(current_price)
             account.history.append([datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'), 'bought ' \
                                    + str(num_shares) + ' ' + stock + ': ' + str(funds)])
+        funds += remaining_funds
         new_account = Account(account.num, account.name, portfolio, funds, account.watchlist, account.history)
         return new_account, buy_statement
 
@@ -377,11 +392,11 @@ def get_market_action():
     t = datetime.now()
     print("managing accounts... it is", t)
     b = Broker()
-    comment1 = b.update_portfolio('1002')
+    comment1, comment2 = b.update_portfolio('1002')
     b.save_accounts()
     value = b.get_value(b.accounts['1002'])
     predictions = b.make_predictions()
-    return comment1, (value, b.accounts['1002'].funds), predictions
+    return comment1, comment2, (value, b.accounts['1002'].funds), predictions
     
 
 if __name__ == '__main__':

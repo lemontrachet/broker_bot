@@ -2,7 +2,7 @@ from subprocess import check_output
 import re
 import time
 from twython import Twython, TwythonStreamer
-from random import choice
+from random import choice, randint
 import requests
 import json
 import stock_broker
@@ -104,6 +104,7 @@ class Listener(TwythonStreamer):
                 response = '@' + tw_user + ' ' + response
                 try:
                     twitter.update_status(status=response, in_reply_to_status_id=tw_id)
+                    print("reply:", response)
                 except Exception as e:
                     print(e)
             time.sleep(60)
@@ -143,12 +144,14 @@ def say_cpu(twitter):
 ## retweets
 #######################################################
 
-def fave(query, t, count=25):
+def fave(query, t, count=10):
     try: tweets = t.search(q=query, count=count)
     except Exception: pass
     try:
         for tweet in tweets['statuses']:
+            time.sleep(randint(0, 4))
             result = t.create_favorite(id=tweet['id'])
+            time.sleep(randint(0, 4))
             result = t.retweet(id=tweet['id'])
             print("retweet:", result)
             
@@ -168,7 +171,7 @@ topics = ['nasdaq', 'algorithmic', 'bloomberg', 'ftse', 'banking', 'banker', 'lo
 def make_friends(t):
     topic = choice(topics)
     try:
-        results = t.cursor(t.search, q=topic, count=25)
+        results = t.cursor(t.search, q=topic, count=20)
     except Exception:
         results = []
 
@@ -177,6 +180,7 @@ def make_friends(t):
             user = r['user']['screen_name']
             try:
                 t.create_friendship(id=user)
+                time.sleep(randint(0, 4))
             except Exception:
                 pass
 
@@ -193,9 +197,11 @@ def purge_follows(t):
         for id in i_follow['ids']:
             if id not in followers['ids']:
                 t.destroy_friendship(user_id=id)
+                time.sleep(randint(0, 4))
                 deleted += 1
         for id in followers['ids']:
             if id not in i_follow['ids']:
+                time.sleep(randint(0, 4))
                 t.create_friendship(user_id=id)
                 new += 1
     except:
@@ -224,10 +230,10 @@ def main_loop():
     responder_thread.start()
     
     # start counter
-    x = 1
+    x = 14
     #make_friends(twitter)
     while True:
-        comment, balances, predictions = stock_broker.get_market_action()
+        buy_comment, sell_comment, balances, predictions = stock_broker.get_market_action()
         if x % 14 == 0:
             for p in predictions[:2]:
                 
@@ -241,8 +247,10 @@ def main_loop():
                 twitter.update_profile(description=desc)
             except:
                 print("could not update balance")
-        print(comment)
-        say_comment(twitter, comment)
+        print(buy_comment)
+        print(sell_comment)
+        say_comment(twitter, buy_comment)
+        say_comment(twitter, sell_comment)
         if x % 18 == 0: say_comment(twitter)
         if x % 39 == 0: say_cpu(twitter)
         if x % 150 == 0: purge_follows(twitter)
