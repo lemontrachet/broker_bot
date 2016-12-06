@@ -70,7 +70,12 @@ class Listener(TwythonStreamer):
                             "there is more to life than money",
                             "i'm out dogging, i'll check that one later",
                             "just buy low and sell high",
-                            "i'm too stoned right now believe me you don't want my advice")
+                            "i'm too stoned right now believe me you don't want my advice",
+                            "the caravan's rocking don't come knocking catch you later",
+                            "if the stock options are good i will seriously consider the position (100k++)",
+                            "exactly",
+                            "never even heard of it, i stick to the major exchanges",
+                            "tweet me a ticker symbol for a free tip")
         if stock and price and trigger_date:
             try:
                 s = Share(stock)
@@ -115,7 +120,11 @@ class Listener(TwythonStreamer):
 #######################################################
 
 words = ['#algorithmic #trading', '#nasdaq', '#ftse', '#sp500', '#machinelearning', '#mff',
-         "#christmas", "#cityoflondon", "#deeplearning", "#gradientboosting", "fintech"]
+         "#christmas", "#cityoflondon", "#deeplearning", "#gradientboosting", "#fintech",
+         '#gaul is divided into three parts', 'where is my bloody #butler',
+         "tweet me a ticker symbol for a free tip",
+         "tweet me a ticker symbol for a free tip",
+         "tweet me a ticker symbol for a free tip"]
 
 def say_comment(twitter, comment=None):
     if comment == None:
@@ -131,7 +140,7 @@ def say_cpu(twitter):
     temp = check_output(["vcgencmd", "measure_temp"])
     temp = temp.decode("UTF-8")
     temp = re.search(p, temp).group()
-    ttemp = "CPU at " + temp + " C "
+    ttemp = "#CPU at " + temp + " C "
     try:
         twitter.update_status(status=ttemp)
         print("tweet:", ttemp)
@@ -180,6 +189,7 @@ def make_friends(t):
             user = r['user']['screen_name']
             try:
                 t.create_friendship(id=user)
+                print('followed', user)
                 time.sleep(randint(0, 4))
             except Exception:
                 pass
@@ -230,29 +240,33 @@ def main_loop():
     responder_thread.start()
     
     # start counter
-    x = 14
+    x = 1
     #make_friends(twitter)
     while True:
         buy_comment, sell_comment, balances, predictions = stock_broker.get_market_action()
+        
         if x % 14 == 0:
             for p in predictions[:2]:
-                
                 say_comment(twitter, "by {0.trigger_date} {0.stock} will be at about {0.prediction}".format(p))
+
+        # profile message
         desc = 'trader, connoisseur.' + \
                ' tweet me a ticker symbol for a tip.                 Cash: ' + str(int(balances[1])) + \
                '      equities: ' + str(int(balances[0])) + \
                '      total: ' + str(int(sum(balances)))
-        if x % 9 == 0:
+        if x % 5 == 0:
             try:
                 twitter.update_profile(description=desc)
             except:
                 print("could not update balance")
+                
         print(buy_comment)
         print(sell_comment)
         say_comment(twitter, buy_comment)
         say_comment(twitter, sell_comment)
+        
         if x % 18 == 0: say_comment(twitter)
-        if x % 39 == 0: say_cpu(twitter)
+        if x % 14 == 0: say_cpu(twitter)
         if x % 150 == 0: purge_follows(twitter)
         if x % 16 == 0:
             print("retweet")

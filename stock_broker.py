@@ -85,6 +85,7 @@ class Broker():
         self.save_accounts()
 
     def update_portfolio(self, num, p=0):
+        print(datetime.now(), 'update_portfolio')
         try:
             account = self.accounts[num]
             current_balance = account.funds
@@ -112,6 +113,7 @@ class Broker():
         return value
 
     def review_portfolio(self, account):
+        print(datetime.now(), 'review_portfolio')
         for key in account.portfolio.keys():
             print(key, account.portfolio[key])
         value = self.get_value(account)
@@ -134,8 +136,8 @@ class Broker():
                     price = float(s.get_price())
                     net_gain = (price * units) - total_bought_price
                     print(key, net_gain)
-                    day7_price = self.predict_stock(key)
-                    if day7_price <= price * 0.9:
+                    day7_price, _ = self.predict_stock(key)
+                    if float(day7_price) <= price * 0.9:
                         sell_shares.append(key)
                         print(key, 'is predicted to fall this week: time to sell')
                     elif net_gain > 500:
@@ -145,7 +147,8 @@ class Broker():
                                                       and price > (float(s.get_200day_moving_avg()) * 1.05):
                         sell_shares.append(key)
                         print(key, 'is well above its rolling average: selling')
-                except Exception:
+                except Exception as e:
+                    print(e)
                     print("don't know whether to sell")
         
         if len(sell_shares) > 0:
@@ -156,14 +159,15 @@ class Broker():
         return actions
 
     def sell_stocks(self, account, actions):
+        print(datetime.now(), 'sell_stocks')
         if actions['sell'] == []: return account, ''
         print(actions)
         portfolio = account.portfolio
         total_proceeds = 0
         sell_statement = []
         for stock in actions['sell']:
-            s = Share(stock)
             try:
+                s = Share(stock)
                 current_price = float(s.get_price())
             except Exception:
                 print("network error: cannot process transaction for", stock, ". Try again later")
@@ -192,6 +196,7 @@ class Broker():
             return new_account, sell_statement
 
     def update_watchlist(self, account):
+        print(datetime.now(), 'update_watchlist')
         all_shares = get_stock_list.get_stocks()[3:]
         for share in all_shares:
             try:
@@ -203,6 +208,7 @@ class Broker():
                 pass
 
     def generate_buy_list(self, account):
+        print(datetime.now(), 'generate_buy_list')
         buy_list = []
         for key in account.watchlist.keys():
             try:    
@@ -216,6 +222,7 @@ class Broker():
         return buy_list
 
     def predictive_buy(self, account):
+        print(datetime.now(), 'predictive_buy')
         print("getting latest forecasts...")
         self.get_predictions()
         today = datetime.strftime(datetime.now(), '%Y-%m-%d')
@@ -233,6 +240,7 @@ class Broker():
         return account, buy_statement
 
     def buy_stocks(self, account, actions, buy_list=None):
+        print(datetime.now(), 'buy_stocks')
         funds = float(account.funds) / 5
         remaining_funds = float(account.funds) - funds
         if actions['buy'] == 0 or funds < 200: return account, choice(['nothing caught my eye', "i'm skint",
@@ -252,8 +260,8 @@ class Broker():
         buy_statement = ''
         shuffle(buy_list)
         for stock in buy_list:
-            s = Share(stock)
             try:
+                s = Share(stock)
                 current_price = float(s.get_price())
             except Exception:
                 print("network error: could not process transaction for", stock)
@@ -300,7 +308,8 @@ class Broker():
         Broker.forecasts = forecasts
 
     def make_predictions(self, n=5):
-        df = Broker.forecasts
+        print(datetime.now(), 'make_predictions')
+        df = Broker.forecasts.copy()
         indices = list(df.index)
         indices = sample(indices, min(n, len(indices)))
         stock_tips = []
@@ -309,6 +318,7 @@ class Broker():
         return stock_tips
 
     def predict_stock(self, stock):
+        print(datetime.now(), 'predict_stock')
         forecasts = Broker.forecasts
         found = 0
         try:
@@ -327,6 +337,7 @@ class Broker():
                 print(e)
                 return
         trigger_date = datetime.strftime(datetime.strptime(trigger_date, '%Y-%m-%d'), '%d %B')
+        price = int(float(price))
         return price, trigger_date
 
     def save_prediction(self, price, stock):
@@ -347,7 +358,6 @@ class Broker():
                                              'prediction', 'actual', 'error']]
         print("prediction saved")
     
-
     def manage_accounts(self, num=None):
         hours, minutes = [8, 12, 15], [10, 11, 12, 30, 31, 32, 33, 34]
         if datetime.now().hour in hours and datetime.now().minute in minutes:
@@ -395,6 +405,7 @@ class Broker():
 ## for use with broker bot
         
 def get_market_action():
+    print(datetime.now(), 'get_market_action')
     t = datetime.now()
     print("managing accounts... it is", t)
     b = Broker()
@@ -402,6 +413,13 @@ def get_market_action():
     b.save_accounts()
     value = b.get_value(b.accounts['1002'])
     predictions = b.make_predictions()
+    for p in predictions:
+        try:
+            p.prediction = int(float(p.prediction))
+            p.trigger_date = datetime.strftime(datetime.strptime(p.trigger_date, '%Y-%m-%d'), '%d %B')
+        except Exception as e:
+            print(e)
+            continue
     return comment1, comment2, (value, b.accounts['1002'].funds), predictions
     
 
