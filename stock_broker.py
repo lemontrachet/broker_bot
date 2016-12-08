@@ -112,6 +112,29 @@ class Broker():
             except Exception: return "problem retrieving current prices"
         return value
 
+    def get_risers_and_fallers(self, account):
+        print(datetime.now(), 'checking risers and fallers')
+        risers = []
+        fallers = []
+        if account.portfolio != {}:
+            for key in account.portfolio.keys():
+                try:
+                    share = account.portfolio[key]
+                    bought_price = float(share.price)
+                    units = float(share.holding)
+                    total_bought_price = bought_price * units
+                    s = Share(key)
+                    price = float(s.get_price())
+                    net_gain = (price * units) - total_bought_price
+                    percent_gain = ((price - bought_price) / bought_price) * 100
+                    if percent_gain > 0:
+                        risers.append((key, percent_gain, net_gain))
+                    else:
+                        fallers.append((key, percent_gain, net_gain))
+                except:
+                    continue
+        return risers, fallers
+
     def review_portfolio(self, account):
         print(datetime.now(), 'review_portfolio')
         for key in account.portfolio.keys():
@@ -241,9 +264,9 @@ class Broker():
 
     def buy_stocks(self, account, actions, buy_list=None):
         print(datetime.now(), 'buy_stocks')
-        funds = float(account.funds) / 5
+        funds = float(account.funds) / 3
         remaining_funds = float(account.funds) - funds
-        if actions['buy'] == 0 or funds < 200: return account, choice(['nothing caught my eye', "i'm skint",
+        if actions['buy'] == 0 or funds < 900: return account, choice(['nothing caught my eye', "i'm skint",
                                                                         "i'm out dogging i'll be trading later"])
 
         # check watchlist for shares moving up
@@ -266,7 +289,7 @@ class Broker():
             except Exception:
                 print("network error: could not process transaction for", stock)
                 return account, 'the market is overvalued'
-            num_shares = int((funds / 3) / current_price)
+            num_shares = int((funds / 5) / current_price)
             if num_shares < 1:
                 continue
             else:
@@ -401,26 +424,6 @@ class Broker():
 
 
 
-#############################################################################
-## for use with broker bot
-        
-def get_market_action():
-    print(datetime.now(), 'get_market_action')
-    t = datetime.now()
-    print("managing accounts... it is", t)
-    b = Broker()
-    comment1, comment2 = b.update_portfolio('1002')
-    b.save_accounts()
-    value = b.get_value(b.accounts['1002'])
-    predictions = b.make_predictions()
-    for p in predictions:
-        try:
-            p.prediction = int(float(p.prediction))
-            p.trigger_date = datetime.strftime(datetime.strptime(p.trigger_date, '%Y-%m-%d'), '%d %B')
-        except Exception as e:
-            print(e)
-            continue
-    return comment1, comment2, (value, b.accounts['1002'].funds), predictions
     
 
 if __name__ == '__main__':

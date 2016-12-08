@@ -12,15 +12,8 @@ from collections import deque
 import threading
 import sys
 from yahoo_finance import Share
+import credentials
 
-#######################################################
-## Twitter authentication
-#######################################################
-
-APP_KEY = 'o6uqr48RtXi2rbG6Op4GpTaEW'
-APP_SECRET = 'glpOxJuOwfbUeJ2p0372S5PKNbKXwGu1xue45ZCjSnHCCAQxsd'
-OAUTH_TOKEN = '804783738089570308-yb82pnsQD8hD9hcYhtKOL7yCkLXU2Ar'
-OAUTH_SECRET = 'eRklm3sqRoI6zXnGtFXhNuXv8Fha9iSi6t6zQZSJjiR9r'
 
 #######################################################
 ## Regex Patterns
@@ -68,10 +61,10 @@ class Listener(TwythonStreamer):
         failed_responses = ("it doesn't look like anything to me",
                             "not sure about that one.",
                             "there is more to life than money",
-                            "i'm out dogging, i'll check that one later",
+                            "i'm bowling, i'll check that one later",
                             "just buy low and sell high",
-                            "i'm too stoned right now believe me you don't want my advice",
-                            "the caravan's rocking don't come knocking catch you later",
+                            "i'm driving i'll get back to you",
+                            "i'm just getting into a lift catch you later",
                             "if the stock options are good i will seriously consider the position (100k++)",
                             "exactly",
                             "never even heard of it, i stick to the major exchanges",
@@ -82,7 +75,6 @@ class Listener(TwythonStreamer):
                 current = s.get_price()
             except:
                 current = None
-                pass
             if current and float(current) > float(price):
                 return 'I expect ' + stock + ' to fall to around ' + str(int(float(price))) + ' by ' + str(trigger_date)
             elif current and float(current) < float(price):
@@ -119,8 +111,8 @@ class Listener(TwythonStreamer):
 ## Commentary
 #######################################################
 
-words = ['#algorithmic #trading', '#nasdaq', '#ftse', '#sp500', '#machinelearning', '#mff',
-         "#christmas", "#cityoflondon", "#deeplearning", "#gradientboosting", "#fintech",
+words = ['#algorithmic #trading', '#nasdaq', '#ftse', '#sp500', '#machinelearning',
+         "#christmas", "#fintech", "#deeplearning", "#gradientboosting", "#fintech",
          '#gaul is divided into three parts', 'where is my bloody #butler',
          "tweet me a ticker symbol for a free tip",
          "tweet me a ticker symbol for a free tip",
@@ -175,7 +167,7 @@ def fave(query, t, count=10):
 #######################################################
 
 topics = ['nasdaq', 'algorithmic', 'bloomberg', 'ftse', 'banking', 'banker', 'london',
-          'cityoflondon', 'sp500', 'finance', 'economics']
+          'sp500', 'finance', 'economics', 'fine wine']
 
 def make_friends(t):
     topic = choice(topics)
@@ -228,6 +220,7 @@ def purge_follows(t):
 def main_loop():
     
     # twitter object
+    APP_KEY, APP_SECRET, OAUTH_TOKEN, OAUTH_SECRET = credentials.get_credentials()
     twitter = Twython(APP_KEY, APP_SECRET, OAUTH_TOKEN, OAUTH_SECRET)
 
     # streamer / listener object
@@ -241,41 +234,67 @@ def main_loop():
     
     # start counter
     x = 1
-    #make_friends(twitter)
-    while True:
-        buy_comment, sell_comment, balances, predictions = stock_broker.get_market_action()
-        
-        if x % 14 == 0:
-            for p in predictions[:2]:
-                say_comment(twitter, "by {0.trigger_date} {0.stock} will be at about {0.prediction}".format(p))
 
-        # profile message
-        desc = 'trader, connoisseur.' + \
-               ' tweet me a ticker symbol for a tip.                 Cash: ' + str(int(balances[1])) + \
-               '      equities: ' + str(int(balances[0])) + \
-               '      total: ' + str(int(sum(balances)))
-        if x % 5 == 0:
+    # stock broker object
+    b = Broker()
+    
+    while True:
+        account = b.accounts['1002']
+
+        # buy and sell and report actions
+        if x % 7 == 0:
+            buy_comment, sell_comment = b.update_portfolio('1002')
+            b.save_accounts()
+            print(buy_comment)
+            print(sell_comment)
+            say_comment(twitter, buy_comment)
+            say_comment(twitter, sell_comment)
+
+        # get account balance and update profile message
+        balances = [b.get_value(account), account.funds]
+        if type(balances[0]) == str: balances[0] = 0
+        if x % 5 == 0 and type(balances[0]) != str and balances[0] > 0:
+            desc = 'trader, connoisseur.' + \
+                   ' tweet me a ticker symbol for a tip.                 Cash: ' + str(int(balances[1])) + \
+                   '      equities: ' + str(int(balances[0])) + \
+                   '      total: ' + str(int(sum(balances)))
             try:
                 twitter.update_profile(description=desc)
             except:
                 print("could not update balance")
-                
-        print(buy_comment)
-        print(sell_comment)
-        say_comment(twitter, buy_comment)
-        say_comment(twitter, sell_comment)
+
+        # report biggest risers and fallers
+        risers, fallers = b.get_risers_and_fallers(account)
+        if risers:
+            best = max(risers, key=lambda x: x[1])
+            print(best)
+        if fallers:
+            worst = min(fallers, key=lambda x: x[1])
+            print(worst)
         
+        if x % 11 == 0 and best:
+            say_comment(twitter, "my holding of {0[0]} is up {0[1]}%".format(best))
+        
+        # stock predictions
+        if x % 14 == 0:
+            predictions = b.make_predictions()
+            for p in predictions[:2]:
+                say_comment(twitter, "by {0.trigger_date} {0.stock} will be at about {0.prediction}".format(p))
+
+
+        # commentary
         if x % 18 == 0: say_comment(twitter)
         if x % 14 == 0: say_cpu(twitter)
-        if x % 150 == 0: purge_follows(twitter)
+        if x % 100 == 0: purge_follows(twitter)
         if x % 16 == 0:
             print("retweet")
             word = choice(words)
             print("favourite: ", word)
             fave(word, twitter)
-        x += 1
+            
         print("sleeping until", datetime.strftime(datetime.now() + timedelta(seconds=360), '%T'))
         time.sleep(360)
+        x += 1
 
 ################
 

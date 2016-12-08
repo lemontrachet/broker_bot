@@ -1,0 +1,8 @@
+
+
+def get_credentials():
+    APP_KEY = 'o6uqr48RtXi2rbG6Op4GpTaEW'
+    APP_SECRET = 'glpOxJuOwfbUeJ2p0372S5PKNbKXwGu1xue45ZCjSnHCCAQxsd'
+    OAUTH_TOKEN = '804783738089570308-yb82pnsQD8hD9hcYhtKOL7yCkLXU2Ar'
+    OAUTH_SECRET = 'eRklm3sqRoI6zXnGtFXhNuXv8Fha9iSi6t6zQZSJjiR9r'
+    return APP_KEY, APP_SECRET, OAUTH_TOKEN, OAUTH_SECRET
