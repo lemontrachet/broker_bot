@@ -14,6 +14,9 @@ import sys
 from yahoo_finance import Share
 import credentials
 
+### TODO
+# only keep one prediction per stock per day
+
 
 #######################################################
 ## Regex Patterns
@@ -233,7 +236,7 @@ def main_loop():
     responder_thread.start()
     
     # start counter
-    x = 1
+    x = 18
 
     # stock broker object
     b = Broker()
@@ -281,7 +284,30 @@ def main_loop():
             for p in predictions[:2]:
                 say_comment(twitter, "by {0.trigger_date} {0.stock} will be at about {0.prediction}".format(p))
 
-
+        # tips
+        if x % 18 == 0:
+            climbers, fallers = b.get_stock_tips()
+            if climbers:
+                try:
+                    i = 1
+                    say_comment(twitter, "my buying tips for today:")
+                    for climber in climbers:
+                        say_comment(twitter, "{0}/{1} BUY {2}".format(i, len(climbers), climber))
+                        time.sleep(10)
+                        i += 1
+                except Exception as e:
+                    print(e)
+            if fallers:
+                try:
+                    i = 1
+                    say_comment(twitter, "my selling tips for today:")
+                    for faller in fallers:
+                        say_comment(twitter, "{0}/{1} SELL {2}".format(i, len(fallers), faller))
+                        time.sleep(10)
+                        i += 1
+                except Exception as e:
+                    print(e)
+                    
         # commentary
         if x % 18 == 0: say_comment(twitter)
         if x % 14 == 0: say_cpu(twitter)

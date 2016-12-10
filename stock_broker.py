@@ -363,6 +363,22 @@ class Broker():
         price = int(float(price))
         return price, trigger_date
 
+    def get_stock_tips(self):
+        today = datetime.strftime(datetime.now(), '%Y-%m-%d')
+        df = Broker.forecasts.copy()
+        df = df[df['date_made'] == today]
+        try:
+            df['prediction'] = pd.to_numeric(df['prediction'], errors='coerce')
+            df['gain'] = (df['prediction'] - df['base_value']) / df['base_value']
+            df['gain'].dropna(inplace=True)
+            df.sort_values('gain', ascending=False, inplace=True)
+            print(df)
+            climbers = df['stock'][0:3]
+            fallers = df['stock'][-3:]
+            return list(climbers), list(fallers)
+        except Exception as e:
+            print(e)
+
     def save_prediction(self, price, stock):
         temp = {}
         try:
@@ -423,8 +439,6 @@ class Broker():
 
 
 
-
-    
 
 if __name__ == '__main__':
     b = Broker()
