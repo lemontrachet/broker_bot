@@ -210,13 +210,13 @@ class Broker():
                                         + ': ' + str(float(account.funds) + proceeds)])
             new_account = Account(account.num, account.name, portfolio, account.funds + total_proceeds,
                                   account.watchlist, account.history)
-            sell_statement_stocks = [s for (s, p) in sell_statement]
-            sell_statement_profit = sum([profit for (s, profit) in sell_statement])
-            if sell_statement_stocks == []:
-                sell_statement = ''
-            else:
-                sell_statement = 'sold ' + str(sell_statement_stocks) + ' . total profit: ' + str(sell_statement_profit)
-            return new_account, sell_statement
+        sell_statement_stocks = [s for (s, p) in sell_statement]
+        sell_statement_profit = sum([profit for (s, profit) in sell_statement])
+        if sell_statement_stocks == []:
+            sell_statement = ''
+        else:
+            sell_statement = 'sold ' + str(sell_statement_stocks) + ' . total profit: ' + str(sell_statement_profit)
+        return new_account, sell_statement
 
     def update_watchlist(self, account):
         print(datetime.now(), 'update_watchlist')
@@ -372,6 +372,7 @@ class Broker():
             df['gain'] = (df['prediction'] - df['base_value']) / df['base_value']
             df['gain'].dropna(inplace=True)
             df.sort_values('gain', ascending=False, inplace=True)
+            df.drop_duplicates('stock', inplace=True)
             print(df)
             climbers = df['stock'][0:3]
             fallers = df['stock'][-3:]

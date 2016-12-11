@@ -13,6 +13,7 @@ import threading
 import sys
 from yahoo_finance import Share
 import credentials
+from text_generator import Text_Generator
 
 ### TODO
 # only keep one prediction per stock per day
@@ -38,8 +39,11 @@ class Listener(TwythonStreamer):
     def on_success(self, data):
         if 'text' in data:
             self.tweet_queue.append(data)
-            print("tweet received:")
-            print(data['text'])
+            try:
+                print("tweet received:")
+                print(data['text'])
+            except:
+                pass
 
     def on_error(self, status_code, data):
         print(status_code)
@@ -61,17 +65,6 @@ class Listener(TwythonStreamer):
                 return
 
     def write_response(self, stock, price, trigger_date):
-        failed_responses = ("it doesn't look like anything to me",
-                            "not sure about that one.",
-                            "there is more to life than money",
-                            "i'm bowling, i'll check that one later",
-                            "just buy low and sell high",
-                            "i'm driving i'll get back to you",
-                            "i'm just getting into a lift catch you later",
-                            "if the stock options are good i will seriously consider the position (100k++)",
-                            "exactly",
-                            "never even heard of it, i stick to the major exchanges",
-                            "tweet me a ticker symbol for a free tip")
         if stock and price and trigger_date:
             try:
                 s = Share(stock)
@@ -84,7 +77,11 @@ class Listener(TwythonStreamer):
                 return 'I expect ' + stock + ' to climb to around ' + str(int(float(price))) + ' by ' + str(trigger_date)
             else: return 'I think ' + stock + ' will be at ' + str(int(float(price))) + ' by ' + str(trigger_date)
         else:
-            return choice(failed_responses)
+            tg = Text_Generator()
+            if choice([1, 2]) == 2:
+                return tg.failed_response()
+            else:
+                return tg.horoscope()
 
     def respond(self, twitter):
         tw_text = ''
@@ -236,7 +233,7 @@ def main_loop():
     responder_thread.start()
     
     # start counter
-    x = 18
+    x = 1
 
     # stock broker object
     b = Broker()
@@ -285,7 +282,7 @@ def main_loop():
                 say_comment(twitter, "by {0.trigger_date} {0.stock} will be at about {0.prediction}".format(p))
 
         # tips
-        if x % 18 == 0:
+        if x % 28 == 0:
             climbers, fallers = b.get_stock_tips()
             if climbers:
                 try:
@@ -319,6 +316,7 @@ def main_loop():
             fave(word, twitter)
             
         print("sleeping until", datetime.strftime(datetime.now() + timedelta(seconds=360), '%T'))
+        print("x:", x)
         time.sleep(360)
         x += 1
 
