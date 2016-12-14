@@ -76,12 +76,18 @@ class Listener(TwythonStreamer):
             elif current and float(current) < float(price):
                 return 'I expect ' + stock + ' to climb to around ' + str(int(float(price))) + ' by ' + str(trigger_date)
             else: return 'I think ' + stock + ' will be at ' + str(int(float(price))) + ' by ' + str(trigger_date)
-        else:
+        elif choice([1, 2]) == 1:
             tg = Text_Generator()
-            if choice([1, 2]) == 2:
-                return tg.failed_response()
-            else:
-                return tg.horoscope()
+            return choice([tg.failed_response(), tg.horoscope()])
+        
+        else:
+            try:
+                b = Broker()
+                b.get_stock_tips()
+                tip = b.tip
+                return "my tip today: check out {0}".format(tip)
+            except Exception as e:
+                print(e)
 
     def respond(self, twitter):
         tw_text = ''
@@ -99,6 +105,7 @@ class Listener(TwythonStreamer):
                 if spt: response = self.write_response(spt[0], spt[1], spt[2])
                 else: response = self.write_response(None, None, None)
                 response = '@' + tw_user + ' ' + response
+                response = response[:139]
                 try:
                     twitter.update_status(status=response, in_reply_to_status_id=tw_id)
                     print("reply:", response)
@@ -111,16 +118,10 @@ class Listener(TwythonStreamer):
 ## Commentary
 #######################################################
 
-words = ['#algorithmic #trading', '#nasdaq', '#ftse', '#sp500', '#machinelearning',
-         "#christmas", "#fintech", "#deeplearning", "#gradientboosting", "#fintech",
-         '#gaul is divided into three parts', 'where is my bloody #butler',
-         "tweet me a ticker symbol for a free tip",
-         "tweet me a ticker symbol for a free tip",
-         "tweet me a ticker symbol for a free tip"]
-
 def say_comment(twitter, comment=None):
     if comment == None:
-        comment = choice(words)
+        t = Text_Generator()
+        comment = t.horoscope()#t.word()
     try:
         twitter.update_status(status=comment)
         print("tweet:", comment)
@@ -166,11 +167,9 @@ def fave(query, t, count=10):
 ## new follows
 #######################################################
 
-topics = ['nasdaq', 'algorithmic', 'bloomberg', 'ftse', 'banking', 'banker', 'london',
-          'sp500', 'finance', 'economics', 'fine wine']
-
 def make_friends(t):
-    topic = choice(topics)
+    t = Text_Generator()
+    topic = t.topic()
     try:
         results = t.cursor(t.search, q=topic, count=20)
     except Exception:
@@ -233,7 +232,7 @@ def main_loop():
     responder_thread.start()
     
     # start counter
-    x = 1
+    x = 18
 
     # stock broker object
     b = Broker()
@@ -311,7 +310,8 @@ def main_loop():
         if x % 100 == 0: purge_follows(twitter)
         if x % 16 == 0:
             print("retweet")
-            word = choice(words)
+            t = Text_Generator()
+            word = t.topics()
             print("favourite: ", word)
             fave(word, twitter)
             

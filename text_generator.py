@@ -9,7 +9,7 @@ class Text_Generator():
 
     def failed_response(self):
         return choice(["it doesn't look like anything to me",
-                        "not sure about that one.",
+                        "i own most of that company anyway",
                         "there is more to life than money",
                         "i'm bowling, i'll check that one later",
                         "just buy low and sell high",
@@ -20,7 +20,9 @@ class Text_Generator():
                         "never even heard of it, i stick to the major exchanges",
                         "tweet me a ticker symbol for a free tip",
                         "i'm not a bot. #microdosing helped me get to the top of my profession",
-                        "you wouldn't believe how rich i am"])
+                        "you wouldn't believe how rich i am",
+                        "I didn't get the corner office by waiting in line",
+                        "that's easy for you to say, i have four speech iimpediments"])
 
     def horoscope(self):
         url = 'http://horoscope-api.herokuapp.com/horoscope/today/'
@@ -34,3 +36,14 @@ class Text_Generator():
         except Exception as e:
             print(e)
 
+    def words(self):
+        return choice(['#algorithmic #trading', '#nasdaq', '#ftse', '#sp500', '#machinelearning',
+                       "#christmas", "#fintech", "#deeplearning", "#gradientboosting", "#fintech",
+                       '#gaul is divided into three parts', 'where is my bloody #butler',
+                       "tweet me a ticker symbol for a free tip",
+                       "tweet me a ticker symbol for a free tip",
+                       "tweet me a ticker symbol for a free tip"])
+
+    def topics(self):
+        return choice(['nasdaq', 'algorithmic', 'bloomberg', 'ftse', 'banking', 'banker', 'london',
+                       'sp500', 'finance', 'economics', 'fine wine'])

@@ -37,6 +37,7 @@ class Broker():
 
         self.accounts = {client.num: client for client in file_data}
         self.account_num = len(file_data)
+        self.tip = 'ketamine on toast'
         for account in self.accounts:
             self.accounts[account] = Account(self.accounts[account].num, self.accounts[account].name,
                                      eval(self.accounts[account].portfolio), float(self.accounts[account].funds),
@@ -376,6 +377,8 @@ class Broker():
             print(df)
             climbers = df['stock'][0:3]
             fallers = df['stock'][-3:]
+            
+            self.tip = list(climbers)[0]
             return list(climbers), list(fallers)
         except Exception as e:
             print(e)
@@ -438,6 +441,15 @@ class Broker():
                                for client in accounts])
         f.close()
 
+
+    @property
+    def tip(self):
+        return self._tip
+
+    @tip.setter
+    def tip(self, stock):
+        self._tip = stock
+        print("setting tip:", self.tip)
 
 
 

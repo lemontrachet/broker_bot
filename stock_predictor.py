@@ -36,10 +36,9 @@ class Price_Predictor():
         self.X = self.scaler.fit_transform(self.X)
 
         # make learner and fit training data
-        self.p = GradientBoostingRegressor(loss='quantile',
-                                          learning_rate=0.1,
-                                          max_depth=6,
-                                          warm_start=False)
+        self.p = GradientBoostingRegressor(loss='huber', learning_rate=0.15,
+                                          max_depth=6, n_estimators=250, max_features=3,
+                                          sub_sample=0.95, warm_start=True)
         self.p.fit(self.X, self.y)
 
         print("making predictions...")
