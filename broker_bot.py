@@ -121,7 +121,7 @@ class Listener(TwythonStreamer):
 def say_comment(twitter, comment=None):
     if comment == None:
         t = Text_Generator()
-        comment = t.horoscope()#t.word()
+        comment = choice([t.horoscope(), t.words(), t.failed_response()])
     try:
         twitter.update_status(status=comment)
         print("tweet:", comment)
@@ -230,9 +230,9 @@ def main_loop():
     responder_thread = threading.Thread(target=l.respond, args=(twitter,))
     listener_thread.start()
     responder_thread.start()
-    
+
     # start counter
-    x = 18
+    x = 1
 
     # stock broker object
     b = Broker()
@@ -263,7 +263,11 @@ def main_loop():
                 print("could not update balance")
 
         # report biggest risers and fallers
-        risers, fallers = b.get_risers_and_fallers(account)
+        try:
+            risers, fallers = b.get_risers_and_fallers(account)
+        except Exception as e:
+            print(e)
+            risers, fallers = None, None
         if risers:
             best = max(risers, key=lambda x: x[1])
             print(best)
@@ -282,7 +286,11 @@ def main_loop():
 
         # tips
         if x % 28 == 0:
-            climbers, fallers = b.get_stock_tips()
+            try:
+                climbers, fallers = b.get_stock_tips()
+            except Exception as e:
+                print(e)
+                climbers, fallers = None, None
             if climbers:
                 try:
                     i = 1

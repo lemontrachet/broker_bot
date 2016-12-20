@@ -365,6 +365,7 @@ class Broker():
         return price, trigger_date
 
     def get_stock_tips(self):
+        self.get_predictions()
         today = datetime.strftime(datetime.now(), '%Y-%m-%d')
         df = Broker.forecasts.copy()
         df = df[df['date_made'] == today]

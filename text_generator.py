@@ -9,20 +9,16 @@ class Text_Generator():
 
     def failed_response(self):
         return choice(["it doesn't look like anything to me",
-                        "i own most of that company anyway",
                         "there is more to life than money",
                         "i'm bowling, i'll check that one later",
                         "just buy low and sell high",
                         "i'm driving i'll get back to you",
                         "i'm just getting into a lift catch you later",
-                        "if the stock options are good i will seriously consider the position (100k++)",
-                        "exactly",
-                        "never even heard of it, i stick to the major exchanges",
                         "tweet me a ticker symbol for a free tip",
-                        "i'm not a bot. #microdosing helped me get to the top of my profession",
-                        "you wouldn't believe how rich i am",
                         "I didn't get the corner office by waiting in line",
-                        "that's easy for you to say, i have four speech iimpediments"])
+                        "the cold never bothered me anyway",
+                        "et in arcadia ego",
+                        "i am literally a #grandmotherfucker"])
 
     def horoscope(self):
         url = 'http://horoscope-api.herokuapp.com/horoscope/today/'
@@ -38,12 +34,13 @@ class Text_Generator():
 
     def words(self):
         return choice(['#algorithmic #trading', '#nasdaq', '#ftse', '#sp500', '#machinelearning',
-                       "#christmas", "#fintech", "#deeplearning", "#gradientboosting", "#fintech",
+                       "#fintech", "#deeplearning", "#gradientboosting", "#fintech",
                        '#gaul is divided into three parts', 'where is my bloody #butler',
                        "tweet me a ticker symbol for a free tip",
                        "tweet me a ticker symbol for a free tip",
                        "tweet me a ticker symbol for a free tip"])
 
     def topics(self):
-        return choice(['nasdaq', 'algorithmic', 'bloomberg', 'ftse', 'banking', 'banker', 'london',
-                       'sp500', 'finance', 'economics', 'fine wine'])
+        return choice(['nasdaq', 'algorithmic', 'bloomberg', 'ftse',
+                       'sp500', 'finance', 'economics', 'fine wine',
+                       'elsa and anna'])
