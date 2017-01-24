@@ -1,0 +1,1 @@
+'Broker' object has no attribute 'get_stock_tips'

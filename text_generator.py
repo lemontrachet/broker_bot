@@ -18,7 +18,18 @@ class Text_Generator():
                         "I didn't get the corner office by waiting in line",
                         "the cold never bothered me anyway",
                         "et in arcadia ego",
-                        "i am literally a #grandmotherfucker"])
+                        "i am literally a #grandmotherfucker",
+                        "in the town where i was born lived a man who sailed to sea"])
+
+    def tip_of_the_day():
+        return choice(["porridge with just a splash of mersault 1996...",
+                       "a crab inside a pheasant inside a swan: perfection",
+                       "paying back dog foulers in spades with a poopascooper and a drone",
+                       "crystal meth in your cappucino",
+                       "spiking your butler's tea with acid: hilarious",
+                       "smoking crack in your jacuzzi",
+                       "carrying your lapdog with your drone. put a nappy on it first",
+                       "i'll be checking out the dogging car park round the back of ASDA later..."])
 
     def horoscope(self):
         url = 'http://horoscope-api.herokuapp.com/horoscope/today/'
@@ -28,7 +39,7 @@ class Text_Generator():
         try:
             raw = requests.get(url)
             j = json.loads(raw.text)
-            return j['horoscope'][1:138]
+            return j['horoscope'][1:]
         except Exception as e:
             print(e)
 
